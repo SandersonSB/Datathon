@@ -1,4 +1,4 @@
-import streamlit as st  
+import streamlit as st   
 from pdfminer.high_level import extract_text
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -52,10 +52,10 @@ if not st.session_state.iniciou_aplicacao:
     """)
     
     if st.button("🚀 Iniciar"):
-    st.session_state.iniciou_aplicacao = True
-    st.experimental_rerun()
+        st.session_state.iniciou_aplicacao = True
+        st.experimental_rerun()
     else:
-    st.stop()
+        st.stop()
 
 # ----------------------------
 # ABAS DE FUNCIONALIDADES
