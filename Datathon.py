@@ -7,17 +7,17 @@ import re
 from dotenv import load_dotenv
 import os
 
-# Carrega as variáveis de ambiente do arquivo .env
+# Carrega as variáveis de ambiente
 load_dotenv()
 
-# Chave API Gemini
+# Configura a chave da API Gemini
 chave_api = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=chave_api)
 
 # Modelo Gemini
 modelo_gemini = genai.GenerativeModel("gemini-2.5-flash")
 
-# Estados de sessão
+# Estado de sessão
 if "formulario_enviado" not in st.session_state:
     st.session_state.formulario_enviado = False
 if "curriculo_texto" not in st.session_state:
@@ -25,30 +25,47 @@ if "curriculo_texto" not in st.session_state:
 if "descricao_vaga" not in st.session_state:
     st.session_state.descricao_vaga = ""
 
-st.title("Analisador de Currículo com IA 🧠📄")
+# ----------------------------
+# CABEÇALHO / ABERTURA DO SITE
+# ----------------------------
+st.markdown("""
+    <div style='text-align: center; padding: 30px 0 10px 0;'>
+        <img src='https://img.icons8.com/ios-filled/100/artificial-intelligence.png' width='60'/>
+        <h1 style='font-size: 42px; color: #2c3e50; margin-bottom: 10px;'>IA na Decision</h1>
+        <h4 style='color: #7f8c8d; font-weight: normal;'>Análise inteligente de currículos com apoio de inteligência artificial</h4>
+        <a href="mailto:contato@decisionai.com" style='display: inline-block; margin-top: 10px; font-size: 16px; color: #2980b9; text-decoration: none;'>📧 Fale conosco</a>
+        <hr style='border: 1px solid #ddd; margin-top: 20px;'/>
+    </div>
+""", unsafe_allow_html=True)
 
-# Abas
+# ----------------------------
+# ABAS DE FUNCIONALIDADES
+# ----------------------------
 abas = st.tabs([
     "Introdução",
     "Análise Pontual",
     "Analisar currículos em massa no nosso banco de dados"
 ])
 
-# Aba 1 - Introdução
+# ----------------------------
+# ABA 1 - INTRODUÇÃO
+# ----------------------------
 with abas[0]:
-    st.header("Bem-vindo ao Analisador de Currículos com IA!")
+    st.header("Bem-vindo ao IA na Decision!")
     st.markdown("""
-    Esta ferramenta foi criada para facilitar a análise de currículos utilizando inteligência artificial avançada.
-    
-    **O que você pode fazer aqui?**
-    - Analisar currículos enviados em PDF comparando com a descrição da vaga.
-    - Buscar e consultar os currículos já armazenados na base de dados.
-    - Analisar currículos em massa do nosso banco de dados para obter insights rápidos e eficientes.
-    
-    Utilize as abas acima para navegar entre as funcionalidades.
+    Esta plataforma foi criada para facilitar a triagem e análise de currículos usando tecnologias modernas de IA.
+
+    **Principais funcionalidades:**
+    - 🔍 Análise individual de currículos com comparação à vaga.
+    - 🧠 Geração de relatórios com pontuação e sugestões.
+    - 📁 Análise em massa de currículos já armazenados.
+
+    Use as abas acima para começar!
     """)
 
-# Funções usadas na análise pontual
+# ----------------------------
+# FUNÇÕES AUXILIARES
+# ----------------------------
 def extrair_texto_pdf(arquivo_pdf):
     try:
         return extract_text(arquivo_pdf)
@@ -89,16 +106,18 @@ def extrair_pontuacoes(texto):
     correspondencias = re.findall(padrao, texto)
     return [float(p) for p in correspondencias]
 
-# Aba 2 - Análise Pontual
+# ----------------------------
+# ABA 2 - ANÁLISE PONTUAL
+# ----------------------------
 with abas[1]:
     if not st.session_state.formulario_enviado:
         with st.form("formulario_curriculo"):
-            arquivo_curriculo = st.file_uploader("Envie seu currículo em PDF", type="pdf")
-            st.session_state.descricao_vaga = st.text_area("Cole aqui a descrição da vaga:", placeholder="Descrição da vaga...")
+            arquivo_curriculo = st.file_uploader("📄 Envie seu currículo em PDF", type="pdf")
+            st.session_state.descricao_vaga = st.text_area("📝 Cole aqui a descrição da vaga:", placeholder="Descrição da vaga...")
 
             enviado = st.form_submit_button("Analisar")
             if enviado:
-                if arquivo_curriculo and st.session_state.descricao_vaga.strip() != "":
+                if arquivo_curriculo and st.session_state.descricao_vaga.strip():
                     st.info("Extraindo informações do currículo...")
                     st.session_state.curriculo_texto = extrair_texto_pdf(arquivo_curriculo)
                     st.session_state.formulario_enviado = True
@@ -113,7 +132,7 @@ with abas[1]:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.write("Pontuação de similaridade (usada por alguns sistemas ATS):")
+            st.write("🎯 Pontuação de similaridade (sistemas ATS):")
             st.subheader(f"{similaridade:.2f}")
 
         relatorio = gerar_relatorio(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
@@ -121,12 +140,12 @@ with abas[1]:
         media_final = sum(pontuacoes) / (5 * len(pontuacoes)) if pontuacoes else 0
 
         with col2:
-            st.write("Pontuação média baseada na análise da IA:")
+            st.write("📊 Pontuação média da IA:")
             st.subheader(f"{media_final:.2f}")
 
-        progresso.success("Análise concluída com sucesso!")
+        progresso.success("✅ Análise concluída com sucesso!")
 
-        st.subheader("Relatório de Análise Gerado pela IA:")
+        st.subheader("📃 Relatório da IA:")
         st.markdown(f"""
             <div style='text-align: left; background-color: #000000; padding: 10px; border-radius: 10px; margin: 5px 0; color: white; white-space: pre-wrap;'>
                 {relatorio}
@@ -134,29 +153,39 @@ with abas[1]:
         """, unsafe_allow_html=True)
 
         st.download_button(
-            label="Baixar Relatório",
+            label="📥 Baixar Relatório",
             data=relatorio,
-            file_name="relatorio_curriculo.txt",
-            icon="📥",
+            file_name="relatorio_curriculo.txt"
         )
 
-# Aba 3 - Análise em Massa
+# ----------------------------
+# ABA 3 - ANÁLISE EM MASSA
+# ----------------------------
 with abas[2]:
-    st.header("Analisar Currículos em Massa no Nosso Banco de Dados")
+    st.header("📁 Analisar Currículos em Massa")
     st.markdown("""
-    Nesta aba, você poderá analisar vários currículos simultaneamente, diretamente da nossa base de dados.
+    Nesta aba você poderá carregar ou acessar automaticamente a base de currículos da empresa e aplicar análises em lote com IA.
 
-    **Funcionalidades previstas:**
-    - Carregar ou conectar-se à base de currículos.
-    - Filtrar por critérios específicos (exemplo: área, experiência, formação).
-    - Gerar relatórios consolidados com análises de IA para múltiplos currículos.
-    
-    **Em desenvolvimento!**
+    **O que essa função permitirá em breve:**
+    - Leitura automática de currículos da base.
+    - Geração de relatórios para múltiplos perfis.
+    - Exportação em planilhas com indicadores comparativos.
 
-    Para maiores informações ou sugestões, entre em contato com o time responsável.
+    🔧 **Funcionalidade em desenvolvimento.**
+
+    Caso queira ajudar nos testes ou contribuir com ideias, entre em contato conosco:
+    [📧 contato@decisionai.com](mailto:contato@decisionai.com)
     """)
 
-    # Exemplo de botão (sem funcionalidade real ainda)
-    if st.button("Iniciar análise em massa (em breve)"):
-        st.info("Funcionalidade em desenvolvimento. Aguarde as próximas atualizações!")
+    if st.button("🚀 Iniciar análise em massa (em breve)"):
+        st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
 
+# ----------------------------
+# RODAPÉ INSTITUCIONAL
+# ----------------------------
+st.markdown("""
+<hr/>
+<div style='text-align: center; font-size: 14px; color: #95a5a6; padding: 10px 0;'>
+    Desenvolvido por <strong>Decision AI</strong> • © 2025 • Todos os direitos reservados
+</div>
+""", unsafe_allow_html=True)
