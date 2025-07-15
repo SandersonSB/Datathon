@@ -51,8 +51,11 @@ if not st.session_state.iniciou_aplicacao:
     Clique no botão abaixo para começar.
     """)
 
-    if st.button("🚀 Iniciar"):
-        st.session_state.iniciou_aplicacao = True
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🚀 Iniciar", use_container_width=True):
+            st.session_state.iniciou_aplicacao = True
+
 else:
     # ----------------------------
     # ABAS DE FUNCIONALIDADES
