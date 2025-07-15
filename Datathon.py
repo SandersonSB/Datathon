@@ -1,24 +1,24 @@
-import streamlit as st      
-from pdfminer.high_level import extract_text
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import google.generativeai as genai
-import re
-from dotenv import load_dotenv
-import os
-from carregar_frame import carregar_dados_brutos, montar_df_resumido
+import streamlit as st  # Biblioteca para criar app web simples e interativo
+from pdfminer.high_level import extract_text  # Para ler texto dentro de arquivos PDF
+from sentence_transformers import SentenceTransformer  # Para transformar texto em números (embeddings)
+from sklearn.metrics.pairwise import cosine_similarity  # Para calcular similaridade entre textos
+import google.generativeai as genai  # Para usar IA Gemini do Google
+import re  # Para encontrar padrões em texto
+from dotenv import load_dotenv  # Para carregar variáveis secretas do sistema
+import os  # Para acessar essas variáveis
+from carregar_frame import carregar_dados_brutos, montar_df_resumido  # Funções customizadas para carregar dados
 
-# Carrega as variáveis de ambiente
+# Carrega variáveis de ambiente (ex: chave da API)
 load_dotenv()
 
-# Configura a chave da API Gemini
+# Pega a chave da API Gemini e configura a biblioteca para usar
 chave_api = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=chave_api)
 
-# Modelo Gemini
+# Define o modelo Gemini que será usado para gerar relatórios inteligentes
 modelo_gemini = genai.GenerativeModel("gemini-2.5-flash")
 
-# Inicializa estado da sessão
+# Inicializa variáveis que vão guardar o estado do app para saber o que o usuário fez
 if "iniciou_aplicacao" not in st.session_state:
     st.session_state.iniciou_aplicacao = False
 if "formulario_enviado" not in st.session_state:
@@ -28,63 +28,45 @@ if "curriculo_texto" not in st.session_state:
 if "descricao_vaga" not in st.session_state:
     st.session_state.descricao_vaga = ""
 
-# ----------------------------
-# CABEÇALHO / ABERTURA DO SITE
-# ----------------------------
+# Exibe o cabeçalho com logo e título centralizado
 st.markdown("""
     <div style='text-align: center; padding: 30px 0 10px 0;'>
         <img src='https://raw.githubusercontent.com/SandersonSB/Datathon/main/IA_Gemini_3x0r2u3x0r2u3x0r.png' width='240'/>
         <h1 style='font-size: 42px; color:  #FFA500; margin-bottom: 10px;'>IA na Decision</h1>
-        <h4 style='color: #FF8C00; font-weight: normal;'>Análise inteligente de currículos com apoio de inteligência artificial</h4>
+        <h4 style='color: #FF8C00;'>Análise inteligente de currículos com apoio de inteligência artificial</h4>
         <hr style='border: 1px solid #ddd; margin-top: 20px;'/>
     </div>
 """, unsafe_allow_html=True)
 
-# ----------------------------
-# TELA DE INÍCIO
-# ----------------------------
+# Tela inicial de boas-vindas e botão para começar
 if not st.session_state.iniciou_aplicacao:
     st.markdown("""
     ### 👋 Bem-vindo à plataforma IA na Decision
 
-    Essa plataforma usa **inteligência artificial** para comparar currículos com descrições de vagas, gerar relatórios automáticos e oferecer insights personalizados.
+    Essa plataforma usa **inteligência artificial** para comparar currículos com descrições de vagas, gerar relatórios e dar insights.
 
     Clique no botão abaixo para começar.
     """)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("🚀 Iniciar", use_container_width=True):
-            st.session_state.iniciou_aplicacao = True
+    if st.button("🚀 Iniciar"):
+        st.session_state.iniciou_aplicacao = True
 
 else:
-    # ----------------------------
-    # ABAS DE FUNCIONALIDADES
-    # ----------------------------
-    abas = st.tabs([
-        "Introdução",
-        "Análise Rápida",
-        "Banco de Currículos"
-    ])
+    # Cria as abas (menu) para as funcionalidades do app
+    abas = st.tabs(["Introdução", "Análise Rápida", "Banco de Currículos"])
 
-    # ----------------------------
-    # ABA 1 - INTRODUÇÃO
-    # ----------------------------
+    # Aba 1: Introdução com explicação simples do que o app faz
     with abas[0]:
         st.header("Bem-vindo ao IA na Decision!")
         st.markdown("""
-        Esta plataforma foi criada para facilitar a triagem e análise de currículos usando tecnologias modernas de IA.
+        Esta plataforma ajuda a analisar currículos usando inteligência artificial.
 
-        **Principais funcionalidades:**
-        - 🔍 Análise individual de currículos com comparação à vaga.
-        - 🧠 Geração de relatórios com pontuação e sugestões.
-        - 📁 Análise em massa de currículos já armazenados.
-
-        Use as abas acima para começar!
+        Funcionalidades:
+        - 🔍 Análise rápida e individual de currículos
+        - 🧠 Relatórios automáticos com notas e sugestões
+        - 📁 Visualização e filtros para muitos currículos armazenados
         """)
 
-    # ----------------------------
-    # FUNÇÕES AUXILIARES
-    # ----------------------------
+    # Função para ler o texto de um arquivo PDF (currículo)
     def extrair_texto_pdf(arquivo_pdf):
         try:
             return extract_text(arquivo_pdf)
@@ -92,21 +74,18 @@ else:
             st.error(f"Erro ao extrair texto do PDF: {str(e)}")
             return ""
 
+    # Função para calcular quão parecido dois textos são, usando IA
     def calcular_similaridade(texto1, texto2):
         modelo_bert = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
         emb1 = modelo_bert.encode([texto1])
         emb2 = modelo_bert.encode([texto2])
         return cosine_similarity(emb1, emb2)[0][0]
 
+    # Função que usa a IA Gemini para gerar um relatório inteligente do currículo versus a vaga
     def gerar_relatorio(curriculo, descricao):
         prompt = f"""
 # Contexto:
-Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma descrição de vaga.
-
-# Instruções:
-- Avalie o currículo com base nas habilidades, experiências e aderência à vaga.
-- Para cada ponto-chave, forneça uma nota de 0 a 5, um emoji (✅, ❌, ⚠️) e uma explicação.
-- Finalize com a seção "Sugestões para melhorar seu currículo".
+Você é um Analisador de Currículo com IA.
 
 # Currículo do Candidato:
 {curriculo}
@@ -120,14 +99,13 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
         except Exception as e:
             return f"Erro ao chamar a API do Gemini: {e}"
 
+    # Função para extrair as notas que aparecem no relatório gerado (ex: "4.5/5")
     def extrair_pontuacoes(texto):
         padrao = r'(\d+(?:\.\d+)?)/5'
         correspondencias = re.findall(padrao, texto)
         return [float(p) for p in correspondencias]
 
-    # ----------------------------
-    # ABA 2 - ANÁLISE RÁPIDA
-    # ----------------------------
+    # Aba 2: Onde o usuário envia currículo e descrição da vaga para análise rápida
     with abas[1]:
         if not st.session_state.formulario_enviado:
             with st.form("formulario_curriculo"):
@@ -147,6 +125,7 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
         if st.session_state.formulario_enviado:
             progresso = st.info("Gerando análises e pontuações...")
 
+            # Calcula a similaridade entre currículo e vaga
             similaridade = calcular_similaridade(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
 
             col1, col2 = st.columns(2)
@@ -154,6 +133,7 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
                 st.write("🎯 Pontuação de similaridade (sistemas ATS):")
                 st.subheader(f"{similaridade:.2f}")
 
+            # Gera o relatório pela IA
             relatorio = gerar_relatorio(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
             pontuacoes = extrair_pontuacoes(relatorio)
             media_final = sum(pontuacoes) / (5 * len(pontuacoes)) if pontuacoes else 0
@@ -164,31 +144,27 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
 
             progresso.success("✅ Análise concluída com sucesso!")
 
+            # Mostra o relatório formatado
             st.subheader("📃 Relatório da IA:")
             st.markdown(f"""
-                <div style='text-align: left; background-color: #000000; padding: 10px; border-radius: 10px; margin: 5px 0; color: white; white-space: pre-wrap;'>
+                <div style='background-color: #000; padding: 10px; border-radius: 10px; color: white; white-space: pre-wrap;'>
                     {relatorio}
                 </div>
             """, unsafe_allow_html=True)
 
+            # Botão para baixar o relatório
             st.download_button(
                 label="📥 Baixar Relatório",
                 data=relatorio,
                 file_name="relatorio_curriculo.txt"
             )
 
-    # ----------------------------
-    # ABA 3 - BANCO DE CURRÍCULOS
-    # ----------------------------
+    # Aba 3: Visualizar e filtrar vários currículos já armazenados
     with abas[2]:
         st.header("📁 Banco de Currículos")
+        st.markdown("Visualize candidatos e use filtros para evitar lentidão.")
 
-        st.markdown("""
-        Visualize os candidatos e currículos disponíveis na base.
-        Use os filtros abaixo antes de carregar os dados para evitar lentidão.
-        """)
-
-        @st.cache_data
+        @st.cache_data  # Mantém os dados em cache para não carregar toda hora
         def carregar_base():
             return carregar_dados_brutos()
 
@@ -211,6 +187,7 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
             if vaga_selecionada == "Todas" and recrutador_sel == "Todos":
                 st.warning("⚠️ Por favor, selecione pelo menos um filtro para visualizar os dados.")
             else:
+                # Aplica filtros nos dados
                 if vaga_selecionada != "Todas":
                     df_resumido = df_resumido[df_resumido["titulo_vaga"] == vaga_selecionada]
                 if recrutador_sel != "Todos":
@@ -220,10 +197,10 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
                 st.success(f"✅ {len(df_final)} registros encontrados.")
                 st.dataframe(df_final, use_container_width=True)
 
-                # === Similaridade
+                # Calcula similaridade entre currículo e atividades da vaga para cada candidato
                 st.subheader("🎯 Similaridade CV vs. Atividades da Vaga")
 
-                @st.cache_resource
+                @st.cache_resource  # Mantém o modelo carregado em cache para agilizar
                 def carregar_modelo_bert():
                     return SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
 
@@ -244,11 +221,13 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
                 df_final["similaridade_cv_vaga"] = resultados_similaridade
                 df_final2 = df_final.sort_values(by='similaridade_cv_vaga', ascending=False)
 
+                # Mostra os dados filtrados com a nova coluna de similaridade
                 st.dataframe(
                     df_final2[["nome", "codigo", "titulo_vaga", "recrutador", "similaridade_cv_vaga"]],
                     use_container_width=True
                 )
 
+                # Permite baixar os resultados filtrados em CSV
                 csv = df_final2.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     label="📥 Baixar resultados em CSV",
@@ -259,9 +238,7 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
         else:
             st.info("Aplique filtros e clique no botão para carregar os dados.")
 
-# ----------------------------
-# RODAPÉ INSTITUCIONAL
-# ----------------------------
+# Rodapé institucional simples no final da página
 st.markdown("""
 <hr/>
 <div style='text-align: center; font-size: 14px; color: #95a5a6; padding: 10px 0;'>
