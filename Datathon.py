@@ -177,86 +177,88 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
                 file_name="relatorio_curriculo.txt"
             )
 
-    # ----------------------------
-    # ABA 3 - BANCO DE CURRÍCULOS
-    # ----------------------------
-    with abas[2]:
-        st.header("📁 Banco de Currículos")
+# ----------------------------
+# ABA 3 - BANCO DE CURRÍCULOS
+# ----------------------------
+with abas[2]:
+    st.header("📁 Banco de Currículos")
 
-        st.markdown("""
-        Visualize os candidatos e currículos disponíveis na base.
-        Use os filtros abaixo antes de carregar os dados para evitar lentidão.
-        """)
+    st.markdown("""
+    Visualize os candidatos e currículos disponíveis na base.
+    Use os filtros abaixo antes de carregar os dados para evitar lentidão.
+    """)
 
-        @st.cache_data
-        def carregar_base():
-            return carregar_dados_brutos()
+    @st.cache_data
+    def carregar_base():
+        return carregar_dados_brutos()  # Agora retorna df_resumido já processado e leve
 
-        df_candidatos, df_applicants, df_vagas = carregar_base()
+    df_resumido = carregar_base()
 
-        with st.form("filtros_candidatos"):
-            col1, col2 = st.columns(2)
+    with st.form("filtros_candidatos"):
+        col1, col2 = st.columns(2)
 
-            with col1:
-                vagas_disp = df_candidatos['titulo_vaga'].dropna().unique().tolist()
-                vaga_selecionada = st.selectbox("Filtrar por vaga", ["Todas"] + sorted(vagas_disp))
+        with col1:
+            vagas_disp = df_resumido['titulo_vaga'].dropna().unique().tolist()
+            vaga_selecionada = st.selectbox("Filtrar por vaga", ["Todas"] + sorted(vagas_disp))
 
-            with col2:
-                recrutadores = df_candidatos['recrutador'].dropna().unique().tolist()
-                recrutador_sel = st.selectbox("Filtrar por recrutador", ["Todos"] + sorted(recrutadores))
+        with col2:
+            recrutadores = df_resumido['recrutador'].dropna().unique().tolist()
+            recrutador_sel = st.selectbox("Filtrar por recrutador", ["Todos"] + sorted(recrutadores))
 
-            aplicar = st.form_submit_button("🔍 Aplicar Filtros")
+        aplicar = st.form_submit_button("🔍 Aplicar Filtros")
 
-        if aplicar:
-            if vaga_selecionada == "Todas" and recrutador_sel == "Todos":
-                st.warning("⚠️ Por favor, selecione pelo menos um filtro para visualizar os dados.")
-            else:
-                if vaga_selecionada != "Todas":
-                    df_candidatos = df_candidatos[df_candidatos["titulo_vaga"] == vaga_selecionada]
-
-                if recrutador_sel != "Todos":
-                    df_candidatos = df_candidatos[df_candidatos["recrutador"] == recrutador_sel]
-
-                with st.spinner("🔄 Processando base filtrada..."):
-                    df_final = montar_df_resumido(df_candidatos, df_applicants, df_vagas)
-
-                st.success(f"✅ {len(df_final)} registros encontrados após o filtro.")
-                st.dataframe(df_final, use_container_width=True)
-
-                # ==== CÁLCULO DE SIMILARIDADE ====
-                st.subheader("🎯 Similaridade CV vs. Atividades da Vaga")
-
-                modelo_bert = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
-
-                resultados_similaridade = []
-                for _, row in df_final.iterrows():
-                    texto1 = str(row.get("cv_pt", ""))
-                    texto2 = str(row.get("perfil_vaga__principais_atividades", ""))
-                    if texto1.strip() and texto2.strip():
-                        emb1 = modelo_bert.encode([texto1])
-                        emb2 = modelo_bert.encode([texto2])
-                        score = cosine_similarity(emb1, emb2)[0][0]
-                        resultados_similaridade.append(round(score, 4))
-                    else:
-                        resultados_similaridade.append(None)
-
-                df_final["similaridade_cv_vaga"] = resultados_similaridade
-                df_final2 = df_final.sort_values(by='similaridade_cv_vaga', ascending=False)
-
-                st.dataframe(
-                    df_final2[["nome", "codigo", "titulo_vaga", "recrutador", "similaridade_cv_vaga"]],
-                    use_container_width=True
-                )
-
-                csv = df_final2.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    label="📥 Baixar resultados em CSV",
-                    data=csv,
-                    file_name="resultados_filtrados.csv",
-                    mime="text/csv"
-                )
+    if aplicar:
+        if vaga_selecionada == "Todas" and recrutador_sel == "Todos":
+            st.warning("⚠️ Por favor, selecione pelo menos um filtro para visualizar os dados.")
         else:
-            st.info("Aplique filtros e clique no botão para carregar os dados.")
+            if vaga_selecionada != "Todas":
+                df_resumido = df_resumido[df_resumido["titulo_vaga"] == vaga_selecionada]
+            if recrutador_sel != "Todos":
+                df_resumido = df_resumido[df_resumido["recrutador"] == recrutador_sel]
+
+            df_final = df_resumido.copy()
+            st.success(f"✅ {len(df_final)} registros encontrados.")
+            st.dataframe(df_final, use_container_width=True)
+
+            # === Similaridade
+            st.subheader("🎯 Similaridade CV vs. Atividades da Vaga")
+
+            @st.cache_resource
+            def carregar_modelo_bert():
+                return SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+
+            modelo_bert = carregar_modelo_bert()
+
+            resultados_similaridade = []
+            for _, row in df_final.iterrows():
+                texto1 = str(row.get("cv_pt", ""))
+                texto2 = str(row.get("perfil_vaga__principais_atividades", ""))
+                if texto1.strip() and texto2.strip():
+                    emb1 = modelo_bert.encode([texto1])
+                    emb2 = modelo_bert.encode([texto2])
+                    score = cosine_similarity(emb1, emb2)[0][0]
+                    resultados_similaridade.append(round(score, 4))
+                else:
+                    resultados_similaridade.append(None)
+
+            df_final["similaridade_cv_vaga"] = resultados_similaridade
+            df_final2 = df_final.sort_values(by='similaridade_cv_vaga', ascending=False)
+
+            st.dataframe(
+                df_final2[["nome", "codigo", "titulo_vaga", "recrutador", "similaridade_cv_vaga"]],
+                use_container_width=True
+            )
+
+            csv = df_final2.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="📥 Baixar resultados em CSV",
+                data=csv,
+                file_name="resultados_filtrados.csv",
+                mime="text/csv"
+            )
+    else:
+        st.info("Aplique filtros e clique no botão para carregar os dados.")
+
 
 # ----------------------------
 # RODAPÉ INSTITUCIONAL
