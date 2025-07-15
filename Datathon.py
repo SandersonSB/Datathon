@@ -55,49 +55,50 @@ if not st.session_state.iniciou_aplicacao:
         st.session_state.iniciou_aplicacao = True
         st.experimental_rerun()
 
-# ----------------------------
-# ABAS DE FUNCIONALIDADES
-# ----------------------------
-abas = st.tabs([
-    "Introdução",
-    "Análise Pontual",
-    "Analisar currículos em massa no nosso banco de dados"
-])
+else:
+    # ----------------------------
+    # ABAS DE FUNCIONALIDADES
+    # ----------------------------
+    abas = st.tabs([
+        "Introdução",
+        "Análise Pontual",
+        "Analisar currículos em massa no nosso banco de dados"
+    ])
 
-# ----------------------------
-# ABA 1 - INTRODUÇÃO
-# ----------------------------
-with abas[0]:
-    st.header("Bem-vindo ao IA na Decision!")
-    st.markdown("""
-    Esta plataforma foi criada para facilitar a triagem e análise de currículos usando tecnologias modernas de IA.
+    # ----------------------------
+    # ABA 1 - INTRODUÇÃO
+    # ----------------------------
+    with abas[0]:
+        st.header("Bem-vindo ao IA na Decision!")
+        st.markdown("""
+        Esta plataforma foi criada para facilitar a triagem e análise de currículos usando tecnologias modernas de IA.
 
-    **Principais funcionalidades:**
-    - 🔍 Análise individual de currículos com comparação à vaga.
-    - 🧠 Geração de relatórios com pontuação e sugestões.
-    - 📁 Análise em massa de currículos já armazenados.
+        **Principais funcionalidades:**
+        - 🔍 Análise individual de currículos com comparação à vaga.
+        - 🧠 Geração de relatórios com pontuação e sugestões.
+        - 📁 Análise em massa de currículos já armazenados.
 
-    Use as abas acima para começar!
-    """)
+        Use as abas acima para começar!
+        """)
 
-# ----------------------------
-# FUNÇÕES AUXILIARES
-# ----------------------------
-def extrair_texto_pdf(arquivo_pdf):
-    try:
-        return extract_text(arquivo_pdf)
-    except Exception as e:
-        st.error(f"Erro ao extrair texto do PDF: {str(e)}")
-        return ""
+    # ----------------------------
+    # FUNÇÕES AUXILIARES
+    # ----------------------------
+    def extrair_texto_pdf(arquivo_pdf):
+        try:
+            return extract_text(arquivo_pdf)
+        except Exception as e:
+            st.error(f"Erro ao extrair texto do PDF: {str(e)}")
+            return ""
 
-def calcular_similaridade(texto1, texto2):
-    modelo_bert = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
-    emb1 = modelo_bert.encode([texto1])
-    emb2 = modelo_bert.encode([texto2])
-    return cosine_similarity(emb1, emb2)[0][0]
+    def calcular_similaridade(texto1, texto2):
+        modelo_bert = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+        emb1 = modelo_bert.encode([texto1])
+        emb2 = modelo_bert.encode([texto2])
+        return cosine_similarity(emb1, emb2)[0][0]
 
-def gerar_relatorio(curriculo, descricao):
-    prompt = f"""
+    def gerar_relatorio(curriculo, descricao):
+        prompt = f"""
 # Contexto:
 Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma descrição de vaga.
 
@@ -112,90 +113,90 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
 # Descrição da Vaga:
 {descricao}
 """
-    try:
-        resposta = modelo_gemini.generate_content(prompt)
-        return resposta.text
-    except Exception as e:
-        return f"Erro ao chamar a API do Gemini: {e}"
+        try:
+            resposta = modelo_gemini.generate_content(prompt)
+            return resposta.text
+        except Exception as e:
+            return f"Erro ao chamar a API do Gemini: {e}"
 
-def extrair_pontuacoes(texto):
-    padrao = r'(\d+(?:\.\d+)?)/5'
-    correspondencias = re.findall(padrao, texto)
-    return [float(p) for p in correspondencias]
+    def extrair_pontuacoes(texto):
+        padrao = r'(\d+(?:\.\d+)?)/5'
+        correspondencias = re.findall(padrao, texto)
+        return [float(p) for p in correspondencias]
 
-# ----------------------------
-# ABA 2 - ANÁLISE PONTUAL
-# ----------------------------
-with abas[1]:
-    if not st.session_state.formulario_enviado:
-        with st.form("formulario_curriculo"):
-            arquivo_curriculo = st.file_uploader("📄 Envie seu currículo em PDF", type="pdf")
-            st.session_state.descricao_vaga = st.text_area("📝 Cole aqui a descrição da vaga:", placeholder="Descrição da vaga...")
+    # ----------------------------
+    # ABA 2 - ANÁLISE PONTUAL
+    # ----------------------------
+    with abas[1]:
+        if not st.session_state.formulario_enviado:
+            with st.form("formulario_curriculo"):
+                arquivo_curriculo = st.file_uploader("📄 Envie seu currículo em PDF", type="pdf")
+                st.session_state.descricao_vaga = st.text_area("📝 Cole aqui a descrição da vaga:", placeholder="Descrição da vaga...")
 
-            enviado = st.form_submit_button("Analisar")
-            if enviado:
-                if arquivo_curriculo and st.session_state.descricao_vaga.strip():
-                    st.info("Extraindo informações do currículo...")
-                    st.session_state.curriculo_texto = extrair_texto_pdf(arquivo_curriculo)
-                    st.session_state.formulario_enviado = True
-                    st.experimental_rerun()
-                else:
-                    st.warning("Por favor, envie o currículo e a descrição da vaga.")
+                enviado = st.form_submit_button("Analisar")
+                if enviado:
+                    if arquivo_curriculo and st.session_state.descricao_vaga.strip():
+                        st.info("Extraindo informações do currículo...")
+                        st.session_state.curriculo_texto = extrair_texto_pdf(arquivo_curriculo)
+                        st.session_state.formulario_enviado = True
+                        st.experimental_rerun()
+                    else:
+                        st.warning("Por favor, envie o currículo e a descrição da vaga.")
 
-    if st.session_state.formulario_enviado:
-        progresso = st.info("Gerando análises e pontuações...")
+        if st.session_state.formulario_enviado:
+            progresso = st.info("Gerando análises e pontuações...")
 
-        similaridade = calcular_similaridade(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
+            similaridade = calcular_similaridade(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write("🎯 Pontuação de similaridade (sistemas ATS):")
-            st.subheader(f"{similaridade:.2f}")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write("🎯 Pontuação de similaridade (sistemas ATS):")
+                st.subheader(f"{similaridade:.2f}")
 
-        relatorio = gerar_relatorio(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
-        pontuacoes = extrair_pontuacoes(relatorio)
-        media_final = sum(pontuacoes) / (5 * len(pontuacoes)) if pontuacoes else 0
+            relatorio = gerar_relatorio(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
+            pontuacoes = extrair_pontuacoes(relatorio)
+            media_final = sum(pontuacoes) / (5 * len(pontuacoes)) if pontuacoes else 0
 
-        with col2:
-            st.write("📊 Pontuação média da IA:")
-            st.subheader(f"{media_final:.2f}")
+            with col2:
+                st.write("📊 Pontuação média da IA:")
+                st.subheader(f"{media_final:.2f}")
 
-        progresso.success("✅ Análise concluída com sucesso!")
+            progresso.success("✅ Análise concluída com sucesso!")
 
-        st.subheader("📃 Relatório da IA:")
-        st.markdown(f"""
-            <div style='text-align: left; background-color: #000000; padding: 10px; border-radius: 10px; margin: 5px 0; color: white; white-space: pre-wrap;'>
-                {relatorio}
-            </div>
-        """, unsafe_allow_html=True)
+            st.subheader("📃 Relatório da IA:")
+            st.markdown(f"""
+                <div style='text-align: left; background-color: #000000; padding: 10px; border-radius: 10px; margin: 5px 0; color: white; white-space: pre-wrap;'>
+                    {relatorio}
+                </div>
+            """, unsafe_allow_html=True)
 
-        st.download_button(
-            label="📥 Baixar Relatório",
-            data=relatorio,
-            file_name="relatorio_curriculo.txt"
-        )
+            st.download_button(
+                label="📥 Baixar Relatório",
+                data=relatorio,
+                file_name="relatorio_curriculo.txt"
+            )
 
-# ----------------------------
-# ABA 3 - ANÁLISE EM MASSA
-# ----------------------------
-with abas[2]:
-    st.header("📁 Analisar Currículos em Massa")
-    st.markdown("""
-    Nesta aba você poderá carregar ou acessar automaticamente a base de currículos da empresa e aplicar análises em lote com IA.
+    # ----------------------------
+    # ABA 3 - ANÁLISE EM MASSA
+    # ----------------------------
+    with abas[2]:
+        st.header("📁 Analisar Currículos em Massa")
+        st.markdown("""
+        Nesta aba você poderá carregar ou acessar automaticamente a base de currículos da empresa e aplicar análises em lote com IA.
 
-    **O que essa função permitirá em breve:**
-    - Leitura automática de currículos da base.
-    - Geração de relatórios para múltiplos perfis.
-    - Exportação em planilhas com indicadores comparativos.
+        **O que essa função permitirá em breve:**
+        - Leitura automática de currículos da base.
+        - Geração de relatórios para múltiplos perfis.
+        - Exportação em planilhas com indicadores comparativos.
 
-    🔧 **Funcionalidade em desenvolvimento.**
+        🔧 **Funcionalidade em desenvolvimento.**
 
-    Caso queira ajudar nos testes ou contribuir com ideias, entre em contato conosco:
-    [📧 contato@decisionai.com](mailto:contato@decisionai.com)
-    """)
+        Caso queira ajudar nos testes ou contribuir com ideias, entre em contato conosco:
+        [📧 contato@decisionai.com](mailto:contato@decisionai.com)
+        """)
 
-    if st.button("🚀 Iniciar análise em massa (em breve)"):
-        st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
+        if st.button("🚀 Iniciar análise em massa (em breve)"):
+            st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
 
 # ----------------------------
 # RODAPÉ INSTITUCIONAL
