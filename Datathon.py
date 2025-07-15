@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 from pdfminer.high_level import extract_text
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -30,10 +30,9 @@ if "descricao_vaga" not in st.session_state:
 # ----------------------------
 st.markdown("""
     <div style='text-align: center; padding: 30px 0 10px 0;'>
-        <img src='https://github.com/SandersonSB/Datathon/blob/main/IA_Gemini_3x0r2u3x0r2u3x0r.png' width='60'/>
+        <img src='https://raw.githubusercontent.com/SandersonSB/Datathon/main/IA_Gemini_3x0r2u3x0r2u3x0r.png' width='60'/>
         <h1 style='font-size: 42px; color:  #FFA500; margin-bottom: 10px;'>IA na Decision</h1>
         <h4 style='color: #FF8C00; font-weight: normal;'>Análise inteligente de currículos com apoio de inteligência artificial</h4>
-        <a href="mailto:contato@decisionai.com" style='display: inline-block; margin-top: 10px; font-size: 16px; color: #2980b9; text-decoration: none;'>📧 Fale conosco</a>
         <hr style='border: 1px solid #ddd; margin-top: 20px;'/>
     </div>
 """, unsafe_allow_html=True)
