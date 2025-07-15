@@ -185,40 +185,24 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
     # ABA 3 - ANÁLISE EM MASSA
     # ----------------------------
     with abas[2]:
-          st.header("📁 Banco de Currículos")
+        st.header("📁 Analisar Currículos em Massa")
+        st.markdown("""
+        Nesta aba você poderá carregar ou acessar automaticamente a base de currículos da empresa e aplicar análises em lote com IA.
 
-    st.markdown("""
-    Use os filtros abaixo para refinar os resultados. Você pode filtrar por qualquer coluna da base.
-    """)
+        **O que essa função permitirá em breve:**
+        - Leitura automática de currículos da base.
+        - Geração de relatórios para múltiplos perfis.
+        - Exportação em planilhas com indicadores comparativos.
 
-    # Copia o DataFrame original para aplicar os filtros
-    df_filtrado = df.copy()
+        🔧 **Funcionalidade em desenvolvimento.**
 
-    # Gera filtros automaticamente para todas as colunas
-    with st.expander("🔍 Filtros avançados"):
-        for coluna in df.columns:
-            valores_unicos = df[coluna].dropna().unique()
+        Caso queira ajudar nos testes ou contribuir com ideias, entre em contato conosco:
+        [📧 contato@decisionai.com](mailto:contato@decisionai.com)
+        """)
 
-            if df[coluna].dtype == "object" or len(valores_unicos) < 30:
-                opcao = st.multiselect(f"Filtrar por: **{coluna}**", sorted(valores_unicos))
-                if opcao:
-                    df_filtrado = df_filtrado[df_filtrado[coluna].isin(opcao)]
-            else:
-                if pd.api.types.is_numeric_dtype(df[coluna]):
-                    min_val, max_val = df[coluna].min(), df[coluna].max()
-                    range_val = st.slider(f"Filtrar por: **{coluna}**", float(min_val), float(max_val), (float(min_val), float(max_val)))
-                    df_filtrado = df_filtrado[df_filtrado[coluna].between(range_val[0], range_val[1])]
-
-    # Exibe a primeira linha filtrada como coluna vertical
-    if not df_filtrado.empty:
-        st.success("✅ Resultado encontrado!")
-        st.write("📄 Primeira linha dos dados filtrados (visualização vertical):")
-        st.dataframe(df_filtrado.head(1).T)
-
-        st.markdown("### 📊 Visualização em tabela completa:")
-        st.dataframe(df_filtrado, use_container_width=True)
-    else:
-        st.warning("⚠️ Nenhum resultado encontrado com os filtros selecionados.")
+        if st.button("🚀 Iniciar análise em massa (em breve)"):
+            st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
+            st.dataframe(df)
 
 # ----------------------------
 # RODAPÉ INSTITUCIONAL
