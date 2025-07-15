@@ -6,10 +6,7 @@ import google.generativeai as genai
 import re
 from dotenv import load_dotenv
 import os
-from carregar_frame import carregar_df_resumido
 
-# Carrega o DataFrame resumido
-df = carregar_df_resumido()
 
 # Carrega as variáveis de ambiente
 load_dotenv()
@@ -202,7 +199,7 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
 
         if st.button("🚀 Iniciar análise em massa (em breve)"):
             st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
-            st.dataframe(df)
+            
 
 # ----------------------------
 # RODAPÉ INSTITUCIONAL
