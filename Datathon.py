@@ -1,4 +1,4 @@
-import streamlit as st     
+import streamlit as st      
 from pdfminer.high_level import extract_text
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -222,6 +222,30 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
 
                 st.success(f"✅ {len(df_final)} registros encontrados após o filtro.")
                 st.dataframe(df_final, use_container_width=True)
+
+                # ==== CÁLCULO DE SIMILARIDADE ====
+                st.subheader("🎯 Similaridade CV vs. Atividades da Vaga")
+
+                modelo_bert = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
+
+                resultados_similaridade = []
+                for _, row in df_final.iterrows():
+                    texto1 = str(row.get("cv_pt", ""))
+                    texto2 = str(row.get("perfil_vaga__principais_atividades", ""))
+                    if texto1.strip() and texto2.strip():
+                        emb1 = modelo_bert.encode([texto1])
+                        emb2 = modelo_bert.encode([texto2])
+                        score = cosine_similarity(emb1, emb2)[0][0]
+                        resultados_similaridade.append(round(score, 4))
+                    else:
+                        resultados_similaridade.append(None)
+
+                df_final["similaridade_cv_vaga"] = resultados_similaridade
+
+                st.dataframe(
+                    df_final[["nome", "codigo", "titulo_vaga", "recrutador", "similaridade_cv_vaga"]],
+                    use_container_width=True
+                )
 
                 csv = df_final.to_csv(index=False).encode("utf-8")
                 st.download_button(
