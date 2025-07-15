@@ -98,9 +98,13 @@ def montar_df_resumido(df_candidatos, df_applicants, df_vagas):
     df_vagas['id_vaga'] = df_vagas['id_vaga'].astype(str)
     df_principal = pd.merge(df_principal, df_vagas, left_on='codigo_vaga', right_on='id_vaga', how='left')
 
+    # Renomear 'nome_x' para 'nome' para evitar erro no app principal
+    if 'nome_x' in df_principal.columns:
+        df_principal = df_principal.rename(columns={'nome_x': 'nome'})
+
     # RESUMO
     colunas_resumo = [
-        'nome_x', 'codigo', 'situacao_candidado', 'data_candidatura', 'recrutador',
+        'nome', 'codigo', 'situacao_candidado', 'data_candidatura', 'recrutador',
         'codigo_vaga', 'titulo_vaga', 'email', 'cv_pt', 'id_vaga',
         'perfil_vaga__principais_atividades',
         'perfil_vaga__competencia_tecnicas_e_comportamentais',
