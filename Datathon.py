@@ -1,3 +1,4 @@
+pip install pdfminer.six
 import streamlit as st
 from pdfminer.high_level import extract_text
 from sentence_transformers import SentenceTransformer
