@@ -62,8 +62,8 @@ else:
     # ----------------------------
     abas = st.tabs([
         "Introdução",
-        "Análise Pontual",
-        "Analisar currículos em massa no nosso banco de dados"
+        "Análise Rápida",
+        "Banco de Currículos"
     ])
 
     # ----------------------------
