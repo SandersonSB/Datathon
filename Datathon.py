@@ -241,7 +241,7 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
                         resultados_similaridade.append(None)
 
                 df_final["similaridade_cv_vaga"] = resultados_similaridade
-                df_final2 = df_final.sort_values(by='similaridade_cv_vaga')
+                df_final2 = df_final.sort_values(by='similaridade_cv_vaga', ascending=False)
 
                 st.dataframe(
                     df_final2[["nome", "codigo", "titulo_vaga", "recrutador", "similaridade_cv_vaga"]],
