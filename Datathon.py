@@ -155,4 +155,55 @@ with abas[1]:
 
         relatorio = gerar_relatorio(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
         pontuacoes = extrair_pontuacoes(relatorio)
-        media_final = sum(pontuacoe_
+        media_final = sum(pontuacoes) / (5 * len(pontuacoes)) if pontuacoes else 0
+
+        with col2:
+            st.write("📊 Pontuação média da IA:")
+            st.subheader(f"{media_final:.2f}")
+
+        progresso.success("✅ Análise concluída com sucesso!")
+
+        st.subheader("📃 Relatório da IA:")
+        st.markdown(f"""
+            <div style='text-align: left; background-color: #000000; padding: 10px; border-radius: 10px; margin: 5px 0; color: white; white-space: pre-wrap;'>
+                {relatorio}
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.download_button(
+            label="📥 Baixar Relatório",
+            data=relatorio,
+            file_name="relatorio_curriculo.txt"
+        )
+
+# ----------------------------
+# ABA 3 - ANÁLISE EM MASSA
+# ----------------------------
+with abas[2]:
+    st.header("📁 Analisar Currículos em Massa")
+    st.markdown("""
+    Nesta aba você poderá carregar ou acessar automaticamente a base de currículos da empresa e aplicar análises em lote com IA.
+
+    **O que essa função permitirá em breve:**
+    - Leitura automática de currículos da base.
+    - Geração de relatórios para múltiplos perfis.
+    - Exportação em planilhas com indicadores comparativos.
+
+    🔧 **Funcionalidade em desenvolvimento.**
+
+    Caso queira ajudar nos testes ou contribuir com ideias, entre em contato conosco:
+    [📧 contato@decisionai.com](mailto:contato@decisionai.com)
+    """)
+
+    if st.button("🚀 Iniciar análise em massa (em breve)"):
+        st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
+
+# ----------------------------
+# RODAPÉ INSTITUCIONAL
+# ----------------------------
+st.markdown("""
+<hr/>
+<div style='text-align: center; font-size: 14px; color: #95a5a6; padding: 10px 0;'>
+    Desenvolvido por <strong>Decision AI</strong> • © 2025 • Todos os direitos reservados
+</div>
+""", unsafe_allow_html=True)
