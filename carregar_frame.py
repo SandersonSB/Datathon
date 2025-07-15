@@ -4,6 +4,8 @@ import gdown
 import json
 import pandas as pd
 import ijson
+import os
+import gc
 
 def baixar_arquivos():
     file_ids = {
@@ -19,29 +21,25 @@ def baixar_arquivos():
     }
 
     for key in file_ids:
-        gdown.download(f"https://drive.google.com/uc?id={file_ids[key]}", outputs[key], quiet=False)
+        if not os.path.exists(outputs[key]):
+            gdown.download(f"https://drive.google.com/uc?id={file_ids[key]}", outputs[key], quiet=False)
 
-def carregar_dados_brutos():
-    baixar_arquivos()
-
-    # === PROSPECTS ===
-    with open('prospects.json', 'r', encoding='utf-8') as f:
-        dados = json.load(f)
-
+def carregar_prospects_streaming():
     registros = []
-    for codigo_vaga, info_vaga in dados.items():
-        titulo = info_vaga.get('titulo', '')
-        modalidade = info_vaga.get('modalidade', '')
-        for prospect in info_vaga.get('prospects', []):
-            prospect['codigo_vaga'] = codigo_vaga
-            prospect['titulo_vaga'] = titulo
-            prospect['modalidade'] = modalidade
-            registros.append(prospect)
+    with open('prospects.json', 'r', encoding='utf-8') as f:
+        parser = ijson.kvitems(f, '')
+        for codigo_vaga, info_vaga in parser:
+            titulo = info_vaga.get('titulo', '')
+            modalidade = info_vaga.get('modalidade', '')
+            for prospect in info_vaga.get('prospects', []):
+                prospect['codigo_vaga'] = codigo_vaga
+                prospect['titulo_vaga'] = titulo
+                prospect['modalidade'] = modalidade
+                registros.append(prospect)
+    return pd.DataFrame(registros)
 
-    df_candidatos = pd.DataFrame(registros)
-
-    # === APPLICANTS ===
-    registros_applicants = []
+def carregar_applicants_streaming():
+    registros = []
     with open('applicants.json', 'r', encoding='utf-8') as f:
         parser = ijson.kvitems(f, '')
         for codigo_profissional, dados in parser:
@@ -62,12 +60,10 @@ def carregar_dados_brutos():
                 'nivel_espanhol': formacao_e_idiomas.get('nivel_espanhol'),
                 'cv_pt': cv_pt
             }
+            registros.append(registro)
+    return pd.DataFrame(registros)
 
-            registros_applicants.append(registro)
-
-    df_applicants = pd.DataFrame(registros_applicants)
-
-    # === VAGAS ===
+def carregar_vagas():
     with open('vagas.json', 'r', encoding='utf-8') as f:
         vagas_dict = json.load(f)
 
@@ -83,26 +79,20 @@ def carregar_dados_brutos():
                 vaga_flat[secao] = dados_secao
         vagas_lista.append(vaga_flat)
 
-    df_vagas = pd.DataFrame(vagas_lista)
-
-    return df_candidatos, df_applicants, df_vagas
-
+    return pd.DataFrame(vagas_lista)
 
 def montar_df_resumido(df_candidatos, df_applicants, df_vagas):
-    # MERGES
     df_candidatos['codigo_profissional'] = df_candidatos['codigo'].astype(str)
     df_applicants['codigo_profissional'] = df_applicants['codigo_profissional'].astype(str)
-    df_principal = pd.merge(df_candidatos, df_applicants, on='codigo_profissional', how='left')
+    df = pd.merge(df_candidatos, df_applicants, on='codigo_profissional', how='left')
 
-    df_principal['codigo_vaga'] = df_principal['codigo_vaga'].astype(str)
+    df['codigo_vaga'] = df['codigo_vaga'].astype(str)
     df_vagas['id_vaga'] = df_vagas['id_vaga'].astype(str)
-    df_principal = pd.merge(df_principal, df_vagas, left_on='codigo_vaga', right_on='id_vaga', how='left')
+    df = pd.merge(df, df_vagas, left_on='codigo_vaga', right_on='id_vaga', how='left')
 
-    # Renomear 'nome_x' para 'nome' para evitar erro no app principal
-    if 'nome_x' in df_principal.columns:
-        df_principal = df_principal.rename(columns={'nome_x': 'nome'})
+    if 'nome_x' in df.columns:
+        df = df.rename(columns={'nome_x': 'nome'})
 
-    # RESUMO
     colunas_resumo = [
         'nome', 'codigo', 'situacao_candidado', 'data_candidatura', 'recrutador',
         'codigo_vaga', 'titulo_vaga', 'email', 'cv_pt', 'id_vaga',
@@ -113,4 +103,24 @@ def montar_df_resumido(df_candidatos, df_applicants, df_vagas):
         'perfil_vaga__equipamentos_necessarios'
     ]
 
-    return df_principal[colunas_resumo].copy()
+    return df[colunas_resumo].copy()
+
+def carregar_dados_brutos():
+    if os.path.exists("dados_resumidos.parquet"):
+        return pd.read_parquet("dados_resumidos.parquet")
+
+    baixar_arquivos()
+
+    df_candidatos = carregar_prospects_streaming()
+    df_applicants = carregar_applicants_streaming()
+    df_vagas = carregar_vagas()
+
+    df_resumido = montar_df_resumido(df_candidatos, df_applicants, df_vagas)
+
+    # Libera memória
+    del df_candidatos, df_applicants, df_vagas
+    gc.collect()
+
+    df_resumido.to_parquet("dados_resumidos.parquet")
+
+    return df_resumido
