@@ -30,7 +30,7 @@ if "descricao_vaga" not in st.session_state:
 # ----------------------------
 st.markdown("""
     <div style='text-align: center; padding: 30px 0 10px 0;'>
-        <img src='https://raw.githubusercontent.com/SandersonSB/Datathon/main/IA_Gemini_3x0r2u3x0r2u3x0r.png' width='60'/>
+        <img src='https://raw.githubusercontent.com/SandersonSB/Datathon/main/IA_Gemini_3x0r2u3x0r2u3x0r.png' width='120'/>
         <h1 style='font-size: 42px; color:  #FFA500; margin-bottom: 10px;'>IA na Decision</h1>
         <h4 style='color: #FF8C00; font-weight: normal;'>Análise inteligente de currículos com apoio de inteligência artificial</h4>
         <hr style='border: 1px solid #ddd; margin-top: 20px;'/>
