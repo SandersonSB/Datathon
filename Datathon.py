@@ -53,7 +53,10 @@ if not st.session_state.iniciou_aplicacao:
 
     if st.button("🚀 Iniciar"):
         st.session_state.iniciou_aplicacao = True
-        st.experimental_rerun()
+        try:
+            st.experimental_rerun()
+        except RuntimeError:
+            pass
 
 else:
     # ----------------------------
@@ -139,7 +142,10 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
                         st.info("Extraindo informações do currículo...")
                         st.session_state.curriculo_texto = extrair_texto_pdf(arquivo_curriculo)
                         st.session_state.formulario_enviado = True
-                        st.experimental_rerun()
+                        try:
+                            st.experimental_rerun()
+                        except RuntimeError:
+                            pass
                     else:
                         st.warning("Por favor, envie o currículo e a descrição da vaga.")
 
