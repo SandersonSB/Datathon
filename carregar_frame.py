@@ -5,8 +5,7 @@ import json
 import pandas as pd
 import ijson
 
-def carregar_df_resumido():
-    # === DOWNLOAD DOS ARQUIVOS ===
+def baixar_arquivos():
     file_ids = {
         'prospects': '1gggiyvLEP68yqZR20zji7d17tzUfBnib',
         'applicants': '169owq4_yYCwbvMaep1QbC9B59KrNcRBn',
@@ -22,7 +21,10 @@ def carregar_df_resumido():
     for key in file_ids:
         gdown.download(f"https://drive.google.com/uc?id={file_ids[key]}", outputs[key], quiet=False)
 
-    # === BASE PROSPECTS ===
+def carregar_dados_brutos():
+    baixar_arquivos()
+
+    # === PROSPECTS ===
     with open('prospects.json', 'r', encoding='utf-8') as f:
         dados = json.load(f)
 
@@ -30,7 +32,6 @@ def carregar_df_resumido():
     for codigo_vaga, info_vaga in dados.items():
         titulo = info_vaga.get('titulo', '')
         modalidade = info_vaga.get('modalidade', '')
-
         for prospect in info_vaga.get('prospects', []):
             prospect['codigo_vaga'] = codigo_vaga
             prospect['titulo_vaga'] = titulo
@@ -39,7 +40,7 @@ def carregar_df_resumido():
 
     df_candidatos = pd.DataFrame(registros)
 
-    # === BASE APPLICANTS ===
+    # === APPLICANTS ===
     registros_applicants = []
     with open('applicants.json', 'r', encoding='utf-8') as f:
         parser = ijson.kvitems(f, '')
@@ -66,7 +67,7 @@ def carregar_df_resumido():
 
     df_applicants = pd.DataFrame(registros_applicants)
 
-    # === BASE VAGAS ===
+    # === VAGAS ===
     with open('vagas.json', 'r', encoding='utf-8') as f:
         vagas_dict = json.load(f)
 
@@ -84,7 +85,11 @@ def carregar_df_resumido():
 
     df_vagas = pd.DataFrame(vagas_lista)
 
-    # === MERGE FINAL ===
+    return df_candidatos, df_applicants, df_vagas
+
+
+def montar_df_resumido(df_candidatos, df_applicants, df_vagas):
+    # MERGES
     df_candidatos['codigo_profissional'] = df_candidatos['codigo'].astype(str)
     df_applicants['codigo_profissional'] = df_applicants['codigo_profissional'].astype(str)
     df_principal = pd.merge(df_candidatos, df_applicants, on='codigo_profissional', how='left')
@@ -93,7 +98,7 @@ def carregar_df_resumido():
     df_vagas['id_vaga'] = df_vagas['id_vaga'].astype(str)
     df_principal = pd.merge(df_principal, df_vagas, left_on='codigo_vaga', right_on='id_vaga', how='left')
 
-    # === RESUMO FINAL ===
+    # RESUMO
     colunas_resumo = [
         'nome_x', 'codigo', 'situacao_candidado', 'data_candidatura', 'recrutador',
         'codigo_vaga', 'titulo_vaga', 'email', 'cv_pt', 'id_vaga',
@@ -104,5 +109,4 @@ def carregar_df_resumido():
         'perfil_vaga__equipamentos_necessarios'
     ]
 
-    df_resumido = df_principal[colunas_resumo].copy()
-    return df_resumido
+    return df_principal[colunas_resumo].copy()
