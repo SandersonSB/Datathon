@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st  
 from pdfminer.high_level import extract_text
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -17,7 +17,9 @@ genai.configure(api_key=chave_api)
 # Modelo Gemini
 modelo_gemini = genai.GenerativeModel("gemini-2.5-flash")
 
-# Estado de sessão
+# Inicializa estado da sessão
+if "iniciou_aplicacao" not in st.session_state:
+    st.session_state.iniciou_aplicacao = False
 if "formulario_enviado" not in st.session_state:
     st.session_state.formulario_enviado = False
 if "curriculo_texto" not in st.session_state:
@@ -36,6 +38,23 @@ st.markdown("""
         <hr style='border: 1px solid #ddd; margin-top: 20px;'/>
     </div>
 """, unsafe_allow_html=True)
+
+# ----------------------------
+# TELA DE INÍCIO
+# ----------------------------
+if not st.session_state.iniciou_aplicacao:
+    st.markdown("""
+    ### 👋 Bem-vindo à plataforma IA na Decision
+
+    Essa plataforma usa **inteligência artificial** para comparar currículos com descrições de vagas, gerar relatórios automáticos e oferecer insights personalizados.
+
+    Clique no botão abaixo para começar.
+    """)
+    
+    if st.button("🚀 Iniciar"):
+        st.session_state.iniciou_aplicacao = True
+        st.experimental_rerun()
+    st.stop()
 
 # ----------------------------
 # ABAS DE FUNCIONALIDADES
@@ -136,55 +155,4 @@ with abas[1]:
 
         relatorio = gerar_relatorio(st.session_state.curriculo_texto, st.session_state.descricao_vaga)
         pontuacoes = extrair_pontuacoes(relatorio)
-        media_final = sum(pontuacoes) / (5 * len(pontuacoes)) if pontuacoes else 0
-
-        with col2:
-            st.write("📊 Pontuação média da IA:")
-            st.subheader(f"{media_final:.2f}")
-
-        progresso.success("✅ Análise concluída com sucesso!")
-
-        st.subheader("📃 Relatório da IA:")
-        st.markdown(f"""
-            <div style='text-align: left; background-color: #000000; padding: 10px; border-radius: 10px; margin: 5px 0; color: white; white-space: pre-wrap;'>
-                {relatorio}
-            </div>
-        """, unsafe_allow_html=True)
-
-        st.download_button(
-            label="📥 Baixar Relatório",
-            data=relatorio,
-            file_name="relatorio_curriculo.txt"
-        )
-
-# ----------------------------
-# ABA 3 - ANÁLISE EM MASSA
-# ----------------------------
-with abas[2]:
-    st.header("📁 Analisar Currículos em Massa")
-    st.markdown("""
-    Nesta aba você poderá carregar ou acessar automaticamente a base de currículos da empresa e aplicar análises em lote com IA.
-
-    **O que essa função permitirá em breve:**
-    - Leitura automática de currículos da base.
-    - Geração de relatórios para múltiplos perfis.
-    - Exportação em planilhas com indicadores comparativos.
-
-    🔧 **Funcionalidade em desenvolvimento.**
-
-    Caso queira ajudar nos testes ou contribuir com ideias, entre em contato conosco:
-    [📧 contato@decisionai.com](mailto:contato@decisionai.com)
-    """)
-
-    if st.button("🚀 Iniciar análise em massa (em breve)"):
-        st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
-
-# ----------------------------
-# RODAPÉ INSTITUCIONAL
-# ----------------------------
-st.markdown("""
-<hr/>
-<div style='text-align: center; font-size: 14px; color: #95a5a6; padding: 10px 0;'>
-    Desenvolvido por <strong>Decision AI</strong> • © 2025 • Todos os direitos reservados
-</div>
-""", unsafe_allow_html=True)
+        media_final = sum(pontuacoe_
