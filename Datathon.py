@@ -52,8 +52,9 @@ if not st.session_state.iniciou_aplicacao:
     """)
     
     if st.button("🚀 Iniciar"):
-        st.session_state.iniciou_aplicacao = True
-        st.experimental_rerun()
+    st.session_state.iniciou_aplicacao = True
+    st.experimental_rerun()
+else:
     st.stop()
 
 # ----------------------------
