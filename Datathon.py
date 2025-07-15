@@ -6,7 +6,7 @@ import google.generativeai as genai
 import re
 from dotenv import load_dotenv
 import os
-
+from carregar_frame import carregar_dados_brutos, montar_df_resumido
 
 # Carrega as variáveis de ambiente
 load_dotenv()
@@ -51,7 +51,6 @@ if not st.session_state.iniciou_aplicacao:
 
     Clique no botão abaixo para começar.
     """)
-
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("🚀 Iniciar", use_container_width=True):
@@ -127,7 +126,7 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
         return [float(p) for p in correspondencias]
 
     # ----------------------------
-    # ABA 2 - ANÁLISE PONTUAL
+    # ABA 2 - ANÁLISE RÁPIDA
     # ----------------------------
     with abas[1]:
         if not st.session_state.formulario_enviado:
@@ -179,27 +178,59 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
             )
 
     # ----------------------------
-    # ABA 3 - ANÁLISE EM MASSA
+    # ABA 3 - BANCO DE CURRÍCULOS
     # ----------------------------
     with abas[2]:
-        st.header("📁 Analisar Currículos em Massa")
+        st.header("📁 Banco de Currículos")
+
         st.markdown("""
-        Nesta aba você poderá carregar ou acessar automaticamente a base de currículos da empresa e aplicar análises em lote com IA.
-
-        **O que essa função permitirá em breve:**
-        - Leitura automática de currículos da base.
-        - Geração de relatórios para múltiplos perfis.
-        - Exportação em planilhas com indicadores comparativos.
-
-        🔧 **Funcionalidade em desenvolvimento.**
-
-        Caso queira ajudar nos testes ou contribuir com ideias, entre em contato conosco:
-        [📧 contato@decisionai.com](mailto:contato@decisionai.com)
+        Visualize os candidatos e currículos disponíveis na base.
+        Use os filtros abaixo antes de carregar os dados para evitar lentidão.
         """)
 
-        if st.button("🚀 Iniciar análise em massa (em breve)"):
-            st.info("Essa funcionalidade estará disponível em breve. Fique ligado!")
-            
+        @st.cache_data
+        def carregar_base():
+            return carregar_dados_brutos()
+
+        df_candidatos, df_applicants, df_vagas = carregar_base()
+
+        with st.form("filtros_candidatos"):
+            col1, col2 = st.columns(2)
+
+            with col1:
+                vagas_disp = df_candidatos['titulo_vaga'].dropna().unique().tolist()
+                vaga_selecionada = st.selectbox("Filtrar por vaga", ["Todas"] + sorted(vagas_disp))
+
+            with col2:
+                recrutadores = df_candidatos['recrutador'].dropna().unique().tolist()
+                recrutador_sel = st.selectbox("Filtrar por recrutador", ["Todos"] + sorted(recrutadores))
+
+            aplicar = st.form_submit_button("🔍 Aplicar Filtros")
+
+        if aplicar:
+            if vaga_selecionada != "Todas":
+                df_candidatos = df_candidatos[df_candidatos["titulo_vaga"] == vaga_selecionada]
+
+            if recrutador_sel != "Todos":
+                df_candidatos = df_candidatos[df_candidatos["recrutador"] == recrutador_sel]
+
+            with st.spinner("🔄 Processando base filtrada..."):
+                df_final = montar_df_resumido(df_candidatos, df_applicants, df_vagas)
+
+            st.success(f"✅ {len(df_final)} registros encontrados após o filtro.")
+
+            st.dataframe(df_final, use_container_width=True)
+
+            # Exportação
+            csv = df_final.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="📥 Baixar resultados em CSV",
+                data=csv,
+                file_name="resultados_filtrados.csv",
+                mime="text/csv"
+            )
+        else:
+            st.info("Aplique filtros e clique no botão para carregar os dados.")
 
 # ----------------------------
 # RODAPÉ INSTITUCIONAL
