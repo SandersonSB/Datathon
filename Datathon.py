@@ -241,13 +241,14 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
                         resultados_similaridade.append(None)
 
                 df_final["similaridade_cv_vaga"] = resultados_similaridade
+                df_final2 = df_final.sort_values(by='similaridade_cv_vaga')
 
                 st.dataframe(
-                    df_final[["nome", "codigo", "titulo_vaga", "recrutador", "similaridade_cv_vaga"]],
+                    df_final2[["nome", "codigo", "titulo_vaga", "recrutador", "similaridade_cv_vaga"]],
                     use_container_width=True
                 )
 
-                csv = df_final.to_csv(index=False).encode("utf-8")
+                csv = df_final2.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     label="📥 Baixar resultados em CSV",
                     data=csv,
