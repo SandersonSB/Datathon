@@ -53,11 +53,6 @@ if not st.session_state.iniciou_aplicacao:
 
     if st.button("🚀 Iniciar"):
         st.session_state.iniciou_aplicacao = True
-        try:
-            st.experimental_rerun()
-        except RuntimeError:
-            pass
-
 else:
     # ----------------------------
     # ABAS DE FUNCIONALIDADES
@@ -134,18 +129,15 @@ Você é um Analisador de Currículo com IA. Será fornecido um currículo e uma
         if not st.session_state.formulario_enviado:
             with st.form("formulario_curriculo"):
                 arquivo_curriculo = st.file_uploader("📄 Envie seu currículo em PDF", type="pdf")
-                st.session_state.descricao_vaga = st.text_area("📝 Cole aqui a descrição da vaga:", placeholder="Descrição da vaga...")
+                descricao_input = st.text_area("📝 Cole aqui a descrição da vaga:", placeholder="Descrição da vaga...")
 
                 enviado = st.form_submit_button("Analisar")
                 if enviado:
-                    if arquivo_curriculo and st.session_state.descricao_vaga.strip():
+                    if arquivo_curriculo and descricao_input.strip():
                         st.info("Extraindo informações do currículo...")
                         st.session_state.curriculo_texto = extrair_texto_pdf(arquivo_curriculo)
+                        st.session_state.descricao_vaga = descricao_input
                         st.session_state.formulario_enviado = True
-                        try:
-                            st.experimental_rerun()
-                        except RuntimeError:
-                            pass
                     else:
                         st.warning("Por favor, envie o currículo e a descrição da vaga.")
 
